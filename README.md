@@ -29,11 +29,11 @@ package main
 import (
 	"context"
 	"log"
-    "os"
+	"os"
 	"time"
-    "github.com/torfjor/go-vipps"
-    "github.com/torfjor/go-vipps/auth"
-    "github.com/torfjor/go-vipps/ecom"
+	"github.com/torfjor/go-vipps"
+	"github.com/torfjor/go-vipps/auth"
+	"github.com/torfjor/go-vipps/ecom"
 )
 
 func main() {
@@ -42,13 +42,13 @@ func main() {
 		ClientSecret:       os.Getenv("CLIENT_SECRET"),
 		APISubscriptionKey: os.Getenv("API_KEY"),
 	}
-    env := vipps.EnvironmentTesting
-    authClient := auth.NewClient(env, credentials)
+	env := vipps.EnvironmentTesting
+	authClient := auth.NewClient(env, credentials)
 	client := ecom.NewClient(vipps.ClientConfig{
-        HTTPClient: authClient,
-        Logger:      log.New(os.Stdout, "", log.LstdFlags),
-        Environment: env,
-    })
+		HTTPClient: authClient,
+		Logger:      log.New(os.Stdout, "", log.LstdFlags),
+		Environment: env,
+	})
 	
 	mobileNumber := 97777776
 	amount := 1000
@@ -81,4 +81,5 @@ func main() {
 	}
 	// Do something with p
 }
+
 ```
