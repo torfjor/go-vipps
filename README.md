@@ -29,9 +29,11 @@ package main
 import (
 	"context"
 	"log"
-        "os"
-        "github.com/torfjor/go-vipps"
+    "os"
 	"time"
+    "github.com/torfjor/go-vipps"
+    "github.com/torfjor/go-vipps/auth"
+    "github.com/torfjor/go-vipps/ecom"
 )
 
 func main() {
@@ -40,32 +42,32 @@ func main() {
 		ClientSecret:       os.Getenv("CLIENT_SECRET"),
 		APISubscriptionKey: os.Getenv("API_KEY"),
 	}
-	config := vipps.ClientConfig{
-		Logger:      log.New(os.Stdout, "", log.LstdFlags),
-		Environment: vipps.EnvironmentTesting,
-		Credentials: credentials,
-	}
-	
-	client := vipps.NewClient(config)
+    env := vipps.EnvironmentTesting
+    authClient := auth.NewClient(env, credentials)
+	client := ecom.NewClient(vipps.ClientConfig{
+        HTTPClient: authClient,
+        Logger:      log.New(os.Stdout, "", log.LstdFlags),
+        Environment: env,
+    })
 	
 	mobileNumber := 97777776
 	amount := 1000
 	orderID := "8b84-0ad5258beb0f"
 	transactionText := "A transaction"
 	
-	cmd := vipps.InitiatePaymentCommand{
-		MerchantInfo: vipps.MerchantInfo{
+	cmd := ecom.InitiatePaymentCommand{
+		MerchantInfo: ecom.MerchantInfo{
 			MerchantSerialNumber: "CHANGETHIS",
 			CallbackURL:          "https://some.endpoint.no/callbacks",
 			RedirectURL:          "https://some.endpoint.no/redirect",
 			ConsentRemovalURL:    "https://some.endpoint.no/consentremoval",
 			IsApp:                false,
-			PaymentType:          vipps.PaymentTypeRegular,
+			PaymentType:          ecom.PaymentTypeRegular,
 		},
-		CustomerInfo: vipps.CustomerInfo{
+		CustomerInfo: ecom.CustomerInfo{
 			MobileNumber: mobileNumber,
 		},
-		Transaction:  vipps.Transaction{
+		Transaction:  ecom.Transaction{
 			Amount: amount,
 			OrderID: orderID,
 			TransactionText: transactionText,
