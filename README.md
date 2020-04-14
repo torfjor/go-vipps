@@ -21,8 +21,6 @@ import (
 
 ## Usage
 
-Usage of the Vipps APIs requires a set of OAuth client credentials and an API subscription key. A configured `Client` wraps `oauth2.clientcredentials` to automatically refresh tokens when they expire.
-
 ```go
 package main
 
