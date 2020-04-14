@@ -5,22 +5,24 @@ import (
 	"context"
 	"fmt"
 	"github.com/torfjor/go-vipps"
+	"github.com/torfjor/go-vipps/auth"
+	"github.com/torfjor/go-vipps/ecom"
 	"log"
 	"os"
 )
 
 var (
-	ecomClient vipps.Ecom
-	mi         = vipps.MerchantInfo{
+	ecomClient ecom.Client
+	mi         = ecom.MerchantInfo{
 		MerchantSerialNumber: "CHANGETHIS",
 		CallbackURL:          "https://some.endpoint.no/callbacks",
 		RedirectURL:          "https://some.endpoint.no/redirect",
 		ConsentRemovalURL:    "https://some.endpoint.no/consentremoval",
 		IsApp:                false,
-		PaymentType:          vipps.PaymentTypeExpress,
-		ShippingMethods: []vipps.StaticShippingMethod{
+		PaymentType:          ecom.PaymentTypeExpress,
+		ShippingMethods: []ecom.StaticShippingMethod{
 			{
-				IsDefault:        vipps.Yes,
+				IsDefault:        ecom.Yes,
 				Priority:         1,
 				ShippingCost:     0,
 				ShippingMethod:   "Posten servicepakke",
@@ -33,15 +35,15 @@ var (
 		ClientSecret:       os.Getenv("CLIENT_SECRET"),
 		APISubscriptionKey: os.Getenv("API_KEY"),
 	}
-	config = vipps.ClientConfig{
-		Logger:      log.New(os.Stdout, "", log.LstdFlags),
-		Environment: vipps.EnvironmentTesting,
-		Credentials: credentials,
-	}
 )
 
 func main() {
-	ecomClient = vipps.NewClient(config)
+	authClient := auth.NewClient(vipps.EnvironmentTesting, credentials)
+	ecomClient = ecom.NewClient(vipps.ClientConfig{
+		HTTPClient:  authClient,
+		Logger:      log.New(os.Stdout, "", log.LstdFlags),
+		Environment: vipps.EnvironmentTesting,
+	})
 
 	mobileNumber := 97777776
 	amount := 1000
@@ -58,12 +60,12 @@ func main() {
 }
 
 func initiatePayment(orderID, transactionText string, amount, mobileNumber int) string {
-	c := vipps.InitiatePaymentCommand{
+	c := ecom.InitiatePaymentCommand{
 		MerchantInfo: mi,
-		CustomerInfo: vipps.CustomerInfo{
+		CustomerInfo: ecom.CustomerInfo{
 			MobileNumber: mobileNumber,
 		},
-		Transaction: vipps.Transaction{
+		Transaction: ecom.Transaction{
 			OrderID:         orderID,
 			Amount:          amount,
 			TransactionText: transactionText,
@@ -76,8 +78,8 @@ func initiatePayment(orderID, transactionText string, amount, mobileNumber int) 
 	return res.URL
 }
 
-func capturePayment(orderID, transactionText string, amount int) *vipps.CapturedPayment {
-	p, err := ecomClient.CapturePayment(context.TODO(), vipps.CapturePaymentCommand{
+func capturePayment(orderID, transactionText string, amount int) *ecom.CapturedPayment {
+	p, err := ecomClient.CapturePayment(context.TODO(), ecom.CapturePaymentCommand{
 		IdempotencyKey:       "0xdeadbeef",
 		OrderID:              orderID,
 		MerchantSerialNumber: mi.MerchantSerialNumber,
