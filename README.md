@@ -27,9 +27,11 @@ Usage of the Vipps APIs requires a set of OAuth client credentials and an API su
 package main
 
 import (
-    "log"
-    "os"
-    "github.com/torfjor/go-vipps"
+	"context"
+	"log"
+        "os"
+        "github.com/torfjor/go-vipps"
+	"time"
 )
 
 func main() {
@@ -43,9 +45,38 @@ func main() {
 		Environment: vipps.EnvironmentTesting,
 		Credentials: credentials,
 	}
-
+	
 	client := vipps.NewClient(config)
+	
+	mobileNumber := 97777776
+	amount := 1000
+	orderID := "8b84-0ad5258beb0g"
+	transactionText := "A transaction"
+	
+	cmd := vipps.InitiatePaymentCommand{
+		MerchantInfo: vipps.MerchantInfo{
+			MerchantSerialNumber: "CHANGETHIS",
+			CallbackURL:          "https://some.endpoint.no/callbacks",
+			RedirectURL:          "https://some.endpoint.no/redirect",
+			ConsentRemovalURL:    "https://some.endpoint.no/consentremoval",
+			IsApp:                false,
+			PaymentType:          vipps.PaymentTypeRegular,
+		},
+		CustomerInfo: vipps.CustomerInfo{
+			MobileNumber: mobileNumber,
+		},
+		Transaction:  vipps.Transaction{
+			Amount: amount,
+			OrderID: orderID,
+			TransactionText: transactionText,
+		},
+	}
+	
+	ctx, _ := context.WithTimeout(context.Background(), 5 * time.Second)
+	p, err := client.InitiatePayment(ctx, cmd)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Do something with p
 }
 ```
-
-See the examples in `examples/` for more complete examples.
