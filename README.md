@@ -50,7 +50,7 @@ func main() {
 	
 	mobileNumber := 97777776
 	amount := 1000
-	orderID := "8b84-0ad5258beb0g"
+	orderID := "8b84-0ad5258beb0f"
 	transactionText := "A transaction"
 	
 	cmd := vipps.InitiatePaymentCommand{
