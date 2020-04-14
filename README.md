@@ -8,14 +8,14 @@ Community maintained Go client library for the [Vipps](https://vipps.no) E-comme
 Install vipps-go with:
 
 ```sh
-go get -u github.com/torfjor/vipps-go
+go get -u github.com/torfjor/go-vipps
 ```
 
 Then, import it using:
 
 ``` go
 import (
-    "github.com/torfjor/vipps-go"
+    "github.com/torfjor/go-vipps"
 )
 ```
 
