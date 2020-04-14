@@ -5,7 +5,7 @@ Community maintained Go client library for the [Vipps](https://vipps.no) E-comme
 
 ## Installation
 
-Install vipps-go with:
+Install go-vipps with:
 
 ```sh
 go get -u github.com/torfjor/go-vipps
