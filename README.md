@@ -45,3 +45,5 @@ func main() {
 	client := vipps.NewClient(config)
 }
 ```
+
+See the examples in `examples/` for more complete examples.
