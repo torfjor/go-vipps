@@ -27,6 +27,8 @@ Usage of the Vipps APIs requires a set of OAuth client credentials and an API su
 package main
 
 import (
+    "log"
+    "os"
     "github.com/torfjor/go-vipps"
 )
 
