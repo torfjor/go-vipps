@@ -16,12 +16,6 @@ const (
 	tokenEndpoint = "/accessToken/get"
 )
 
-type Credentials struct {
-	ClientID           string
-	ClientSecret       string
-	APISubscriptionKey string
-}
-
 type customTransport struct {
 	config             clientcredentials.Config
 	apiSubscriptionKey string
