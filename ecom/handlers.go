@@ -2,15 +2,14 @@ package ecom
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"path"
 	"strings"
 )
 
-// HandleConsentRemoval returns a convenience http.HandlerFunc for receiving requests
-// for user consent removals from Vipps. `cb` is called with the uid of the user
-// to that wishes to have its consents and data removed.
+// HandleConsentRemoval returns a convenience http.HandlerFunc for receiving
+// requests for user consent removals from Vipps. `cb` is called with the uid
+// of the user to that wishes to have its consents and data removed.
 func HandleConsentRemoval(cb func(uid string)) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {
@@ -45,15 +44,11 @@ func HandleShippingDetails(authToken string, cb func(orderId string, req Shippin
 		pathBySegments := strings.Split(r.URL.Path, "/")
 		orderId := pathBySegments[len(pathBySegments)-2]
 
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		bodyDec := json.NewDecoder(r.Body)
 		defer r.Body.Close()
 
 		req := ShippingCostRequest{}
-		err = json.Unmarshal(body, &req)
+		err := bodyDec.Decode(&req)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -98,14 +93,10 @@ func HandleTransactionUpdate(authToken string, cb func(t TransactionUpdate)) htt
 			return
 		}
 		var t TransactionUpdate
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		bodyDec := json.NewDecoder(r.Body)
 		defer r.Body.Close()
 
-		err = json.Unmarshal(body, &t)
+		err := bodyDec.Decode(&t)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
