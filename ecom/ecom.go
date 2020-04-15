@@ -1,3 +1,5 @@
+// Package ecom provides a client and supporting types to consume and interact
+// with the Vipps Ecom V2 API
 package ecom
 
 import (

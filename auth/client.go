@@ -1,4 +1,4 @@
-// Package auth provides a HTTP client suitable for speaking to Vipps APIs.
+// Package auth provides a HTTP client suitable for consuming Vipps APIs.
 //
 // Vipps APIs require that clients authorize with a client id, a client secret,
 // and an API subscription key.
