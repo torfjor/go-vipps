@@ -13,10 +13,17 @@ import (
 // Client is the interface that wraps all the methods available for interacting
 // with the Vipps Ecom V2 API.
 type Client interface {
+	// InitiatePayment initiates a new Payment and returns a reference to a resource
+	// hosted by Vipps where the payment flow can continue.
 	InitiatePayment(ctx context.Context, cmd InitiatePaymentCommand) (*PaymentReference, error)
+	// CapturePayment captures reserved amounts on a Payment
 	CapturePayment(ctx context.Context, cmd CapturePaymentCommand) (*CapturedPayment, error)
+	// CancelPayment cancels an initiated payment. Errors for payments that are not
+	// in a cancellable state.
 	CancelPayment(ctx context.Context, cmd CancelPaymentCommand) (*CancelledPayment, error)
+	// RefundPayment refunds already captured amounts on a Payment.
 	RefundPayment(ctx context.Context, cmd RefundPaymentCommand) (*RefundedPayment, error)
+	// GetPayment gets a Payment.
 	GetPayment(ctx context.Context, orderID string) (*Payment, error)
 }
 
@@ -55,8 +62,6 @@ func NewClient(config vipps.ClientConfig) Client {
 	}
 }
 
-// CancelPayment cancels an initiated payment. Errors for payments that are not
-// in a cancellable state.
 func (c *client) CancelPayment(ctx context.Context, cmd CancelPaymentCommand) (*CancelledPayment, error) {
 	endpoint := fmt.Sprintf("%s/%s/cancel", c.baseUrl+ecomEndpoint, cmd.OrderID)
 	method := http.MethodPut
@@ -85,7 +90,6 @@ func (c *client) CancelPayment(ctx context.Context, cmd CancelPaymentCommand) (*
 	return &res, nil
 }
 
-// CapturePayment captures reserved amounts on a Payment
 func (c *client) CapturePayment(ctx context.Context, cmd CapturePaymentCommand) (*CapturedPayment, error) {
 	endpoint := fmt.Sprintf("%s/%s/capture", c.baseUrl+ecomEndpoint, cmd.OrderID)
 	method := http.MethodPost
@@ -116,7 +120,6 @@ func (c *client) CapturePayment(ctx context.Context, cmd CapturePaymentCommand) 
 	return &res, nil
 }
 
-// GetPayment gets a Payment.
 func (c *client) GetPayment(ctx context.Context, orderID string) (*Payment, error) {
 	endpoint := fmt.Sprintf("%s/%s/details", c.baseUrl+ecomEndpoint, orderID)
 	method := http.MethodGet
@@ -135,8 +138,6 @@ func (c *client) GetPayment(ctx context.Context, orderID string) (*Payment, erro
 	return &res, nil
 }
 
-// InitiatePayment initiates a new Payment and returns a reference to a resource
-// hosted by Vipps where the payment flow can continue.
 func (c *client) InitiatePayment(ctx context.Context, cmd InitiatePaymentCommand) (*PaymentReference, error) {
 	endpoint := c.baseUrl + ecomEndpoint
 	method := http.MethodPost
@@ -155,7 +156,6 @@ func (c *client) InitiatePayment(ctx context.Context, cmd InitiatePaymentCommand
 	return &res, nil
 }
 
-// RefundPayment refunds already captured amounts on a Payment.
 func (c *client) RefundPayment(ctx context.Context, cmd RefundPaymentCommand) (*RefundedPayment, error) {
 	endpoint := fmt.Sprintf("%s/%s/refund", c.baseUrl+ecomEndpoint, cmd.OrderID)
 	method := http.MethodPost
