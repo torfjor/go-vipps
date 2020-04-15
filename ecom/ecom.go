@@ -229,3 +229,41 @@ type TransactionInfo struct {
 	TransactionID   string     `json:"transactionId"`
 	TransactionText string     `json:"transactionText"`
 }
+
+// AddressType represents an address type
+type AddressType string
+
+// List of values that AddressType can take
+const (
+	AddressTypeHome     AddressType = "H"
+	AddressTypeBusiness AddressType = "B"
+)
+
+// ShippingCostRequest is the request sent from Vipps to calculate shipping
+// costs for an order.
+type ShippingCostRequest struct {
+	AddressID    int         `json:"addressId"`
+	AddressLine1 string      `json:"addressLine1"`
+	AddressLine2 string      `json:"addressLine2"`
+	City         string      `json:"city"`
+	Country      string      `json:"country"`
+	PostCode     string      `json:"postCode"`
+	AddressType  AddressType `json:"addressType"`
+}
+
+// ShippingCostResponse is sent in response to a ShippingCostRequest
+type ShippingCostResponse struct {
+	AddressID       int                    `json:"addressId"`
+	OrderID         string                 `json:"orderId"`
+	ShippingDetails []StaticShippingMethod `json:"shippingDetails"`
+}
+
+// TransactionUpdate represents a transaction update from Vipps
+type TransactionUpdate struct {
+	MerchantSerialNumber string           `json:"merchantSerialNumber"`
+	OrderID              string           `json:"orderId"`
+	ShippingDetails      *ShippingDetails `json:"shippingDetails"`
+	TransactionInfo      *TransactionInfo `json:"transactionInfo"`
+	UserDetails          *UserDetails     `json:"userDetails"`
+	ErrorInfo            *EcomAPIError    `json:"errorInfo"`
+}
