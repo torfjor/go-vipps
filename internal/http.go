@@ -48,7 +48,7 @@ func (c *APIClient) Do(req *http.Request, v interface{}) error {
 	c.L.Printf("[%d] %s %s %v", resp.StatusCode, req.Method, req.URL, time.Since(now))
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode < http.StatusOK || resp.StatusCode > 299 {
 		return HTTPError{
 			Body:   body,
 			Status: resp.StatusCode,
