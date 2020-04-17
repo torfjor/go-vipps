@@ -84,6 +84,7 @@ func (c *client) CreateCharge(ctx context.Context, cmd CreateChargeCommand) (*Ch
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("Idempotency-Key", cmd.IdempotencyKey)
 
 	err = c.apiClient.Do(req, &res)
 	if err != nil {

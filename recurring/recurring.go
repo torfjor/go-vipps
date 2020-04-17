@@ -150,6 +150,7 @@ type Charge struct {
 
 // CreateChargeCommand represents the command used to created a Charge.
 type CreateChargeCommand struct {
+	IdempotencyKey
 	AgreementID string   `json:"-"`
 	Amount      int      `json:"amount"`
 	Currency    Currency `json:"currency,omitempty"`
