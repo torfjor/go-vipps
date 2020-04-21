@@ -88,7 +88,7 @@ func (c *client) CreateCharge(ctx context.Context, cmd CreateChargeCommand) (*Ch
 
 	err = c.apiClient.Do(req, &res)
 	if err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 
 	return &res, nil
@@ -106,7 +106,7 @@ func (c *client) CaptureCharge(ctx context.Context, cmd CaptureChargeCommand) er
 
 	err = c.apiClient.Do(req, nil)
 	if err != nil {
-		return err
+		return wrapErr(err)
 	}
 
 	return nil
@@ -124,7 +124,7 @@ func (c *client) RefundCharge(ctx context.Context, cmd RefundChargeCommand) erro
 
 	err = c.apiClient.Do(req, nil)
 	if err != nil {
-		return err
+		return wrapErr(err)
 	}
 
 	return nil
@@ -143,7 +143,7 @@ func (c *client) CancelCharge(ctx context.Context, cmd DeleteChargeCommand) (*Ch
 
 	err = c.apiClient.Do(req, &res)
 	if err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 
 	return &res, nil
@@ -161,7 +161,7 @@ func (c *client) GetCharge(ctx context.Context, cmd GetChargeCommand) (*Charge, 
 
 	err = c.apiClient.Do(req, &res)
 	if err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 
 	return &res, nil
@@ -184,7 +184,7 @@ func (c *client) ListCharges(ctx context.Context, agreementID string, status ...
 
 	err = c.apiClient.Do(req, &res)
 	if err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 
 	return res, nil
@@ -202,7 +202,7 @@ func (c *client) CreateAgreement(ctx context.Context, cmd CreateAgreementCommand
 
 	err = c.apiClient.Do(req, &res)
 	if err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 
 	return &res, nil
@@ -222,7 +222,7 @@ func (c *client) UpdateAgreement(ctx context.Context, cmd UpdateAgreementCommand
 
 	err = c.apiClient.Do(req, &res)
 	if err != nil {
-		return "", err
+		return "", wrapErr(err)
 	}
 
 	return res.AgreementID, nil
@@ -244,7 +244,7 @@ func (c *client) ListAgreements(ctx context.Context, status ...AgreementStatus) 
 
 	err = c.apiClient.Do(req, &res)
 	if err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 
 	return res, nil
@@ -262,7 +262,7 @@ func (c *client) GetAgreement(ctx context.Context, agreementID string) (*Agreeme
 
 	err = c.apiClient.Do(req, &res)
 	if err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 
 	return &res, nil
