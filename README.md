@@ -44,7 +44,6 @@ func main() {
 	authClient := auth.NewClient(env, credentials)
 	client := ecom.NewClient(vipps.ClientConfig{
 		HTTPClient: authClient,
-		Logger:      log.New(os.Stdout, "", log.LstdFlags),
 		Environment: env,
 	})
 	
