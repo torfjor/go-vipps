@@ -1,13 +1,13 @@
 package main
 
 import (
+	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/torfjor/go-vipps"
 	"github.com/torfjor/go-vipps/auth"
 	"github.com/torfjor/go-vipps/recurring"
 	"github.com/unrolled/render"
 	"html/template"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -42,15 +42,16 @@ func main() {
 		},
 	})
 
-	env := vipps.EnvironmentTesting
+	env := vipps.Environment("production")
 	authClient := auth.NewClient(env, vipps.Credentials{
 		APISubscriptionKey: os.Getenv("API_KEY"),
 		ClientID:           os.Getenv("CLIENT_ID"),
 		ClientSecret:       os.Getenv("CLIENT_SECRET"),
 	})
 
+	logger := log.NewLogfmtLogger(os.Stdout)
 	recurringClient := recurring.NewClient(vipps.ClientConfig{
-		Logger:      log.New(os.Stdout, "", log.LstdFlags),
+		Logger:      logger,
 		HTTPClient:  authClient,
 		Environment: env,
 	})
@@ -71,5 +72,5 @@ func main() {
 	m.HandleFunc("/agreements", h.listAgreements).Methods("GET")
 	m.HandleFunc("/agreements/{id}", h.getAgreement).Methods("GET")
 
-	log.Fatal(srv.ListenAndServe())
+	logger.Log("addr", srv.Addr, "err", srv.ListenAndServe())
 }
