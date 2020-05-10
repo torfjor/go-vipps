@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-kit/kit/log"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
@@ -21,7 +21,7 @@ func (e HTTPError) Error() string {
 }
 
 type APIClient struct {
-	L *log.Logger
+	L log.Logger
 	C *http.Client
 }
 
@@ -45,7 +45,7 @@ func (c *APIClient) Do(req *http.Request, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	c.L.Printf("[%d] %s %s %v", resp.StatusCode, req.Method, req.URL, time.Since(now))
+	c.L.Log("method", req.Method, "url", req.URL, "status", resp.StatusCode, "duration", time.Since(now))
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode < http.StatusOK || resp.StatusCode > 299 {

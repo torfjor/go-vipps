@@ -2,7 +2,7 @@ package vipps
 
 import (
 	"fmt"
-	"log"
+	"github.com/go-kit/kit/log"
 	"net/http"
 )
 
@@ -41,6 +41,6 @@ type Credentials struct {
 // ClientConfig represents the configuration to use for a Client
 type ClientConfig struct {
 	Environment Environment
-	Logger      *log.Logger
+	Logger      log.Logger
 	HTTPClient  *http.Client
 }
