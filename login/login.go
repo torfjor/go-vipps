@@ -45,8 +45,8 @@ type Claims struct {
 	UserID     string `json:"sub"`
 }
 
-// NewLoginClient returns a configured Vipps Login Provider.
-func NewLoginClient(ctx context.Context, config *ClientConfig) (*Provider, error) {
+// NewLoginProvider returns a configured Vipps Login Provider.
+func NewLoginProvider(ctx context.Context, config *ClientConfig) (*Provider, error) {
 	if config.IssuerURL == "" {
 		config.IssuerURL = IssuerURLTesting
 	}
