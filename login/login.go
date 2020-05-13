@@ -18,8 +18,8 @@ type Provider struct {
 	verifier    *oidc.IDTokenVerifier
 }
 
-// ClientConfig represents a configuration for a Provider
-type ClientConfig struct {
+// ProviderConfig represents a configuration for a Provider
+type ProviderConfig struct {
 	ClientID     string
 	ClientSecret string
 	IssuerURL    string
@@ -46,7 +46,7 @@ type Claims struct {
 }
 
 // NewLoginProvider returns a configured Vipps Login Provider.
-func NewLoginProvider(ctx context.Context, config *ClientConfig) (*Provider, error) {
+func NewLoginProvider(ctx context.Context, config *ProviderConfig) (*Provider, error) {
 	if config.IssuerURL == "" {
 		config.IssuerURL = IssuerURLTesting
 	}
