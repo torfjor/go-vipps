@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/torfjor/go-vipps"
@@ -42,7 +44,7 @@ func main() {
 		},
 	})
 
-	env := vipps.Environment("production")
+	env := vipps.EnvironmentTesting
 	authClient := auth.NewClient(env, vipps.Credentials{
 		APISubscriptionKey: os.Getenv("API_KEY"),
 		ClientID:           os.Getenv("CLIENT_ID"),
@@ -71,6 +73,16 @@ func main() {
 	m.Handle("/", http.RedirectHandler("/agreements", http.StatusFound))
 	m.HandleFunc("/agreements", h.listAgreements).Methods("GET")
 	m.HandleFunc("/agreements/{id}", h.getAgreement).Methods("GET")
+
+	id, err := recurringClient.UpdateAgreement(context.Background(), recurring.UpdateAgreementCommand{
+		AgreementID: "agr_47h7fbw",
+		Price:       99900,
+	})
+	if err != nil {
+		logger.Log("err", err)
+		os.Exit(1)
+	}
+	fmt.Printf("%s\n", id)
 
 	logger.Log("addr", srv.Addr, "err", srv.ListenAndServe())
 }
