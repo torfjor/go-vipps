@@ -101,7 +101,12 @@ func (c *Provider) ExchangeCodeForClaims(ctx context.Context, code string) (*Cla
 		UserID: idToken.Subject,
 	}
 
-	if err = idToken.Claims(&claims); err != nil {
+	userInfo, err := c.provider.UserInfo(ctx, oauth2.StaticTokenSource(token))
+	if err != nil {
+		return nil, err
+	}
+
+	if err = userInfo.Claims(&claims); err != nil {
 		return nil, err
 	}
 
