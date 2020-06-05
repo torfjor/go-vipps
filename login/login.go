@@ -89,7 +89,7 @@ func (c *Provider) ExchangeCodeForClaims(ctx context.Context, code string) (*Cla
 
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
-		return nil, errors.New("oauth2: nb id_token in response")
+		return nil, errors.New("oauth2: no id_token in response")
 	}
 
 	idToken, err := c.verifier.Verify(ctx, rawIDToken)
