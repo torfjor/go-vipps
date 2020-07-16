@@ -2,13 +2,20 @@ package login
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
+	"time"
 )
 
-const IssuerURLTesting = "https://apitest.vipps.no/access-management-1.0/access/"
-const IssuerURL = "https://api.vipps.no/access-management-1.0/access/"
+type IssuerURL string
+
+const (
+	IssuerURLTesting    IssuerURL = "https://apitest.vipps.no/access-management-1.0/access/"
+	IssuerURLProduction IssuerURL = "https://api.vipps.no/access-management-1.0/access/"
+)
 
 // List of possible scopes supported by Vipps Login
 const (
@@ -27,9 +34,11 @@ const (
 	// 	Verified phone number (verfied - the number used with Vipps)
 	ScopePhoneNumber = "phoneNumber"
 	// Norwegian national identity number (verified with BankID)
-	ScopeNNIN = "nin"
+	ScopeNNIN = "nnin"
 	// User bank account numbers
 	ScopeAccountNumbers = "accountNumbers"
+	// Signals that version 2 of the API should be used
+	ScopeAPIV2 = "api_version_2"
 )
 
 // Provider is a convenience wrapper around oidc.Provider tailored to the Vipps
@@ -44,14 +53,14 @@ type Provider struct {
 type ProviderConfig struct {
 	ClientID     string
 	ClientSecret string
-	IssuerURL    string
+	IssuerURL    IssuerURL
 	RedirectURL  string
 	Scopes       []string
 }
 
-// Claims represents the claims contained in Vipps ID tokens.
+// Claims represents the claims contained in Vipps ID tokens
 type Claims struct {
-	Address []struct {
+	Address struct {
 		Country   string `json:"country"`
 		Street    string `json:"street_address"`
 		Type      string `json:"address_type"`
@@ -59,20 +68,57 @@ type Claims struct {
 		Zip       string `json:"postal_code"`
 		Region    string `json:"region"`
 	} `json:"address"`
-	Phone      string `json:"phone_number"`
-	Name       string `json:"name"`
-	GivenName  string `json:"given_name"`
-	FamilyName string `json:"family_name"`
-	Email      string `json:"email"`
-	UserID     string `json:"sub"`
+	OtherAddress []struct {
+		Country   string `json:"country"`
+		Street    string `json:"street_address"`
+		Type      string `json:"address_type"`
+		Formatted string `json:"formatted"`
+		Zip       string `json:"postal_code"`
+		Region    string `json:"region"`
+	} `json:"other_address"`
+	NIN           string `json:"nin"`
+	PhoneNumber   string `json:"phone_number"`
+	Name          string `json:"name"`
+	BirthDate     Date   `json:"birthdate"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	UserID        string `json:"sub"`
 }
 
-// NewLoginProvider returns a configured Vipps Login Provider.
-func NewLoginProvider(ctx context.Context, config *ProviderConfig) (*Provider, error) {
+type Date struct {
+	Year  int
+	Month time.Month
+	Day   int
+}
+
+func (d *Date) String() string {
+	return fmt.Sprintf("%d-%d-%d", d.Day, d.Month, d.Year)
+}
+
+func (d *Date) UnmarshalJSON(bytes []byte) error {
+	var s, layout string
+	layout = "2006-01-02"
+	if err := json.Unmarshal(bytes, &s); err != nil {
+		return err
+	}
+	t, err := time.Parse(layout, s)
+	if err != nil {
+		return err
+	}
+	d.Year = t.Year()
+	d.Day = t.Day()
+	d.Month = t.Month()
+	return nil
+}
+
+// NewProvider returns a configured Vipps Login Provider.
+func NewProvider(ctx context.Context, config *ProviderConfig) (*Provider, error) {
 	if config.IssuerURL == "" {
 		config.IssuerURL = IssuerURLTesting
 	}
-	provider, err := oidc.NewProvider(ctx, config.IssuerURL)
+	provider, err := oidc.NewProvider(ctx, string(config.IssuerURL))
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +128,7 @@ func NewLoginProvider(ctx context.Context, config *ProviderConfig) (*Provider, e
 		ClientSecret: config.ClientSecret,
 		Endpoint:     provider.Endpoint(),
 		RedirectURL:  config.RedirectURL,
-		Scopes:       append([]string{oidc.ScopeOpenID}, config.Scopes...),
+		Scopes:       append([]string{oidc.ScopeOpenID, ScopeAPIV2}, config.Scopes...),
 	}
 
 	return &Provider{
