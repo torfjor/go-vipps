@@ -10,6 +10,28 @@ import (
 const IssuerURLTesting = "https://apitest.vipps.no/access-management-1.0/access/"
 const IssuerURL = "https://api.vipps.no/access-management-1.0/access/"
 
+// List of possible scopes supported by Vipps Login
+const (
+	// List containing the users addresses. Will always contain home, but can
+	// also include work and other.
+	ScopeAdress = "address"
+	// User birth date (BankID verified)
+	ScopeBirthDate = "birthDate"
+	// User email (verified), the flag "email_verified : true" in the response
+	// can be used by merchant to confirm for each request that the email
+	// actually is verified
+	ScopeEmail = "email"
+	// User first, middle and given name (verified with National Population
+	// Register)
+	ScopeName = "name"
+	// 	Verified phone number (verfied - the number used with Vipps)
+	ScopePhoneNumber = "phoneNumber"
+	// Norwegian national identity number (verified with BankID)
+	ScopeNNIN = "nin"
+	// User bank account numbers
+	ScopeAccountNumbers = "accountNumbers"
+)
+
 // Provider is a convenience wrapper around oidc.Provider tailored to the Vipps
 // Login API
 type Provider struct {
