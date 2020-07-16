@@ -95,15 +95,15 @@ func NewLoginProvider(ctx context.Context, config *ProviderConfig) (*Provider, e
 }
 
 // AuthCodeURL returns a URL to OAuth 2.0 provider's consent page that asks for
-// permissions for the configured scopes explicitly.
-func (c *Provider) AuthCodeURL(state string) string {
-	return c.oauthConfig.AuthCodeURL(state)
+// permissions for the configured scopes explicitly
+func (p *Provider) AuthCodeURL(state string) string {
+	return p.oauthConfig.AuthCodeURL(state)
 }
 
 // ExchangeCodeForClaims takes an oauth2 authorization code, exchanges it for a
 // token, and returns the contained ID token's claims, if any
-func (c *Provider) ExchangeCodeForClaims(ctx context.Context, code string) (*Claims, error) {
-	token, err := c.oauthConfig.Exchange(ctx, code)
+func (p *Provider) ExchangeCodeForClaims(ctx context.Context, code string) (*Claims, error) {
+	token, err := p.oauthConfig.Exchange(ctx, code)
 	if err != nil {
 		return nil, err
 
@@ -114,7 +114,7 @@ func (c *Provider) ExchangeCodeForClaims(ctx context.Context, code string) (*Cla
 		return nil, errors.New("oauth2: no id_token in response")
 	}
 
-	idToken, err := c.verifier.Verify(ctx, rawIDToken)
+	idToken, err := p.verifier.Verify(ctx, rawIDToken)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (c *Provider) ExchangeCodeForClaims(ctx context.Context, code string) (*Cla
 		UserID: idToken.Subject,
 	}
 
-	userInfo, err := c.provider.UserInfo(ctx, oauth2.StaticTokenSource(token))
+	userInfo, err := p.provider.UserInfo(ctx, oauth2.StaticTokenSource(token))
 	if err != nil {
 		return nil, err
 	}
