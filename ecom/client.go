@@ -3,10 +3,9 @@ package ecom
 import (
 	"context"
 	"fmt"
+	"github.com/go-kit/kit/log"
 	"github.com/torfjor/go-vipps"
 	"github.com/torfjor/go-vipps/internal"
-	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -35,7 +34,7 @@ type client struct {
 // NewClient returns a configured client that implements the Client interface.
 func NewClient(config vipps.ClientConfig) Client {
 	var baseUrl string
-	var logger *log.Logger
+	var logger log.Logger
 
 	if config.HTTPClient == nil {
 		panic("config.HTTPClient cannot be nil")
@@ -48,7 +47,7 @@ func NewClient(config vipps.ClientConfig) Client {
 	}
 
 	if config.Logger == nil {
-		logger = log.New(ioutil.Discard, "", log.LstdFlags)
+		logger = log.NewNopLogger()
 	} else {
 		logger = config.Logger
 	}
