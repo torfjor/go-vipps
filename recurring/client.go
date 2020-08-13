@@ -10,42 +10,22 @@ import (
 )
 
 const (
-	recurringEndpoint = "/recurring/v2/agreements"
+	recurringEndpoint = "recurring/v2/agreements"
 )
 
-// Client is the interface that wraps all the methods available for interacting
-// with the Vipps Recurring Payments API.
-type Client interface {
-	// CreateCharge creates a Charge for an Agreement.
-	CreateCharge(ctx context.Context, cmd CreateChargeCommand) (*ChargeReference, error)
-	// CaptureCharge captures reserved amounts on a Charge.
-	CaptureCharge(ctx context.Context, cmd CaptureChargeCommand) error
-	// RefundCharge refunds already captured amounts on a Charge.
-	RefundCharge(ctx context.Context, cmd RefundChargeCommand) error
-	// CancelCharge deletes a Charge. Will error for Charges that are not in a
-	// cancellable state.
-	CancelCharge(ctx context.Context, cmd DeleteChargeCommand) (*Charge, error)
-	// GetCharge gets a Charge associated with an Agreement.
-	GetCharge(ctx context.Context, cmd GetChargeCommand) (*Charge, error)
-	// ListCharges lists Charges associated with an Agreement.
-	ListCharges(ctx context.Context, agreementID string, status ...ChargeStatus) ([]*Charge, error)
-	// CreateAgreement creates an Agreement.
-	CreateAgreement(ctx context.Context, cmd CreateAgreementCommand) (*AgreementReference, error)
-	// UpdateAgreement updates an Agreement.
-	UpdateAgreement(ctx context.Context, cmd UpdateAgreementCommand) (AgreementID, error)
-	// ListAgreements lists Agreements for a sales unit.
-	ListAgreements(ctx context.Context, status ...AgreementStatus) ([]*Agreement, error)
-	// GetAgreement gets an Agreement.
-	GetAgreement(ctx context.Context, agreementID string) (*Agreement, error)
+type Doer interface {
+	Do(req *http.Request, v interface{}) error
+	NewRequest(ctx context.Context, method, endpoint string, body interface{}) (*http.Request, error)
 }
 
-type client struct {
-	baseUrl   string
-	apiClient internal.APIClient
+// Client represents an API client for the Vipps recurring payments API.
+type Client struct {
+	BaseURL   string
+	APIClient Doer
 }
 
-// NewClient returns a configured client that implements the Client interface.
-func NewClient(config vipps.ClientConfig) Client {
+// NewClient returns a configured Client.
+func NewClient(config vipps.ClientConfig) *Client {
 	var baseUrl string
 	var logger log.Logger
 
@@ -65,27 +45,28 @@ func NewClient(config vipps.ClientConfig) Client {
 		logger = config.Logger
 	}
 
-	return &client{
-		baseUrl: baseUrl,
-		apiClient: internal.APIClient{
+	return &Client{
+		BaseURL: baseUrl,
+		APIClient: &internal.APIClient{
 			L: logger,
 			C: config.HTTPClient,
 		},
 	}
 }
 
-func (c *client) CreateCharge(ctx context.Context, cmd CreateChargeCommand) (*ChargeReference, error) {
-	endpoint := fmt.Sprintf("%s/%s/charges", c.baseUrl+recurringEndpoint, cmd.AgreementID)
+// CreateCharge creates a Charge for an Agreement.
+func (c *Client) CreateCharge(ctx context.Context, cmd CreateChargeCommand) (*ChargeReference, error) {
+	endpoint := fmt.Sprintf("%s/%s/%s/charges", c.BaseURL, recurringEndpoint, cmd.AgreementID)
 	method := http.MethodPost
 	res := ChargeReference{}
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, cmd)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, cmd)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Add("Idempotency-Key", cmd.IdempotencyKey)
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -93,17 +74,18 @@ func (c *client) CreateCharge(ctx context.Context, cmd CreateChargeCommand) (*Ch
 	return &res, nil
 }
 
-func (c *client) CaptureCharge(ctx context.Context, cmd CaptureChargeCommand) error {
-	endpoint := fmt.Sprintf("%s/%s/charges/%s/capture", c.baseUrl+recurringEndpoint, cmd.AgreementID, cmd.ChargeID)
+// CaptureCharge captures reserved amounts on a Charge.
+func (c *Client) CaptureCharge(ctx context.Context, cmd CaptureChargeCommand) error {
+	endpoint := fmt.Sprintf("%s/%s/%s/charges/%s/capture", c.BaseURL, recurringEndpoint, cmd.AgreementID, cmd.ChargeID)
 	method := http.MethodPost
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, nil)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, nil)
 	if err != nil {
 		return err
 	}
 	req.Header.Add("Idempotency-Key", cmd.IdempotencyKey)
 
-	err = c.apiClient.Do(req, nil)
+	err = c.APIClient.Do(req, nil)
 	if err != nil {
 		return wrapErr(err)
 	}
@@ -111,17 +93,18 @@ func (c *client) CaptureCharge(ctx context.Context, cmd CaptureChargeCommand) er
 	return nil
 }
 
-func (c *client) RefundCharge(ctx context.Context, cmd RefundChargeCommand) error {
-	endpoint := fmt.Sprintf("%s/%s/charges/%s/refund", c.baseUrl+recurringEndpoint, cmd.AgreementID, cmd.ChargeID)
+// RefundCharge refunds already captured amounts on a Charge.
+func (c *Client) RefundCharge(ctx context.Context, cmd RefundChargeCommand) error {
+	endpoint := fmt.Sprintf("%s/%s/%s/charges/%s/refund", c.BaseURL, recurringEndpoint, cmd.AgreementID, cmd.ChargeID)
 	method := http.MethodPost
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, cmd)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, cmd)
 	if err != nil {
 		return err
 	}
 	req.Header.Add("Idempotency-Key", cmd.IdempotencyKey)
 
-	err = c.apiClient.Do(req, nil)
+	err = c.APIClient.Do(req, nil)
 	if err != nil {
 		return wrapErr(err)
 	}
@@ -129,18 +112,20 @@ func (c *client) RefundCharge(ctx context.Context, cmd RefundChargeCommand) erro
 	return nil
 }
 
-func (c *client) CancelCharge(ctx context.Context, cmd DeleteChargeCommand) (*Charge, error) {
-	endpoint := fmt.Sprintf("%s/%s/charges/%s", c.baseUrl+recurringEndpoint, cmd.AgreementID, cmd.ChargeID)
+// CancelCharge deletes a Charge. Will error for Charges that are not in a
+// cancellable state.
+func (c *Client) CancelCharge(ctx context.Context, cmd DeleteChargeCommand) (*Charge, error) {
+	endpoint := fmt.Sprintf("%s/%s/%s/charges/%s", c.BaseURL, recurringEndpoint, cmd.AgreementID, cmd.ChargeID)
 	method := http.MethodDelete
 	res := Charge{}
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, nil)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Add("Idempotency-Key", cmd.IdempotencyKey)
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -148,17 +133,18 @@ func (c *client) CancelCharge(ctx context.Context, cmd DeleteChargeCommand) (*Ch
 	return &res, nil
 }
 
-func (c *client) GetCharge(ctx context.Context, cmd GetChargeCommand) (*Charge, error) {
-	endpoint := fmt.Sprintf("%s/%s/charges/%s", c.baseUrl+recurringEndpoint, cmd.AgreementID, cmd.ChargeID)
+// GetCharge gets a Charge associated with an Agreement.
+func (c *Client) GetCharge(ctx context.Context, cmd GetChargeCommand) (*Charge, error) {
+	endpoint := fmt.Sprintf("%s/%s/%s/charges/%s", c.BaseURL, recurringEndpoint, cmd.AgreementID, cmd.ChargeID)
 	method := http.MethodGet
 	res := Charge{}
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, nil)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -166,22 +152,23 @@ func (c *client) GetCharge(ctx context.Context, cmd GetChargeCommand) (*Charge, 
 	return &res, nil
 }
 
-func (c *client) ListCharges(ctx context.Context, agreementID string, status ...ChargeStatus) ([]*Charge, error) {
+// ListCharges lists Charges associated with an Agreement.
+func (c *Client) ListCharges(ctx context.Context, agreementID string, status ...ChargeStatus) ([]*Charge, error) {
 	var query string
 
 	if len(status) > 0 {
 		query = fmt.Sprintf("?chargeStatus=%s", status[0])
 	}
-	endpoint := fmt.Sprintf("%s/%s/charges%s", c.baseUrl+recurringEndpoint, agreementID, query)
+	endpoint := fmt.Sprintf("%s/%s/%s/charges%s", c.BaseURL, recurringEndpoint, agreementID, query)
 	method := http.MethodGet
 	res := make([]*Charge, 0)
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, nil)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -189,17 +176,18 @@ func (c *client) ListCharges(ctx context.Context, agreementID string, status ...
 	return res, nil
 }
 
-func (c *client) CreateAgreement(ctx context.Context, cmd CreateAgreementCommand) (*AgreementReference, error) {
-	endpoint := c.baseUrl + recurringEndpoint
+// CreateAgreement creates an Agreement.
+func (c *Client) CreateAgreement(ctx context.Context, cmd CreateAgreementCommand) (*AgreementReference, error) {
+	endpoint := c.BaseURL + recurringEndpoint
 	method := http.MethodPost
 	res := AgreementReference{}
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, cmd)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -207,19 +195,20 @@ func (c *client) CreateAgreement(ctx context.Context, cmd CreateAgreementCommand
 	return &res, nil
 }
 
-func (c *client) UpdateAgreement(ctx context.Context, cmd UpdateAgreementCommand) (AgreementID, error) {
-	endpoint := fmt.Sprintf("%s/%s", c.baseUrl+recurringEndpoint, cmd.AgreementID)
+// UpdateAgreement updates an Agreement.
+func (c *Client) UpdateAgreement(ctx context.Context, cmd UpdateAgreementCommand) (AgreementID, error) {
+	endpoint := fmt.Sprintf("%s/%s/%s", c.BaseURL, recurringEndpoint, cmd.AgreementID)
 	method := http.MethodPatch
 	res := struct {
 		AgreementID string `json:"agreementId"`
 	}{}
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, cmd)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, cmd)
 	if err != nil {
 		return "", err
 	}
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return "", wrapErr(err)
 	}
@@ -227,21 +216,22 @@ func (c *client) UpdateAgreement(ctx context.Context, cmd UpdateAgreementCommand
 	return res.AgreementID, nil
 }
 
-func (c *client) ListAgreements(ctx context.Context, status ...AgreementStatus) ([]*Agreement, error) {
+// ListAgreements lists Agreements for a sales unit.
+func (c *Client) ListAgreements(ctx context.Context, status ...AgreementStatus) ([]*Agreement, error) {
 	var query string
 	if len(status) > 0 {
 		query = fmt.Sprintf("?status=%s", status[0])
 	}
-	endpoint := c.baseUrl + recurringEndpoint + query
+	endpoint := c.BaseURL + recurringEndpoint + query
 	method := http.MethodGet
 	res := make([]*Agreement, 0)
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, nil)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -249,17 +239,18 @@ func (c *client) ListAgreements(ctx context.Context, status ...AgreementStatus) 
 	return res, nil
 }
 
-func (c *client) GetAgreement(ctx context.Context, agreementID string) (*Agreement, error) {
-	endpoint := fmt.Sprintf("%s/%s", c.baseUrl+recurringEndpoint, agreementID)
+// GetAgreement gets an Agreement.
+func (c *Client) GetAgreement(ctx context.Context, agreementID string) (*Agreement, error) {
+	endpoint := fmt.Sprintf("%s/%s/%s", c.BaseURL, recurringEndpoint, agreementID)
 	method := http.MethodGet
 	res := Agreement{}
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, nil)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

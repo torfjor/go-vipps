@@ -7,32 +7,22 @@ import (
 	"github.com/torfjor/go-vipps"
 	"github.com/torfjor/go-vipps/internal"
 	"net/http"
+	"net/url"
 )
 
-// Client is the interface that wraps all the methods available for interacting
-// with the Vipps Ecom V2 API.
-type Client interface {
-	// InitiatePayment initiates a new Payment and returns a reference to a resource
-	// hosted by Vipps where the payment flow can continue.
-	InitiatePayment(ctx context.Context, cmd InitiatePaymentCommand) (*PaymentReference, error)
-	// CapturePayment captures reserved amounts on a Payment
-	CapturePayment(ctx context.Context, cmd CapturePaymentCommand) (*CapturedPayment, error)
-	// CancelPayment cancels an initiated payment. Errors for payments that are not
-	// in a cancellable state.
-	CancelPayment(ctx context.Context, cmd CancelPaymentCommand) (*CancelledPayment, error)
-	// RefundPayment refunds already captured amounts on a Payment.
-	RefundPayment(ctx context.Context, cmd RefundPaymentCommand) (*RefundedPayment, error)
-	// GetPayment gets a Payment.
-	GetPayment(ctx context.Context, orderID string) (*Payment, error)
+type Doer interface {
+	Do(req *http.Request, v interface{}) error
+	NewRequest(ctx context.Context, method, endpoint string, body interface{}) (*http.Request, error)
 }
 
-type client struct {
-	baseUrl   string
-	apiClient internal.APIClient
+// Client represents an API client for the Vipps ecomm v2 API.
+type Client struct {
+	BaseURL   string
+	APIClient Doer
 }
 
-// NewClient returns a configured client that implements the Client interface.
-func NewClient(config vipps.ClientConfig) Client {
+// NewClient returns a configured Client
+func NewClient(config vipps.ClientConfig) *Client {
 	var baseUrl string
 	var logger log.Logger
 
@@ -52,17 +42,19 @@ func NewClient(config vipps.ClientConfig) Client {
 		logger = config.Logger
 	}
 
-	return &client{
-		baseUrl: baseUrl,
-		apiClient: internal.APIClient{
+	return &Client{
+		BaseURL: baseUrl,
+		APIClient: &internal.APIClient{
 			L: logger,
 			C: config.HTTPClient,
 		},
 	}
 }
 
-func (c *client) CancelPayment(ctx context.Context, cmd CancelPaymentCommand) (*CancelledPayment, error) {
-	endpoint := fmt.Sprintf("%s/%s/cancel", c.baseUrl+ecomEndpoint, cmd.OrderID)
+// CancelPayment cancels an initiated payment. Errors for payments that are not
+// in a cancellable state.
+func (c *Client) CancelPayment(ctx context.Context, cmd CancelPaymentCommand) (*CancelledPayment, error) {
+	endpoint := fmt.Sprintf("%s/%s/%s/cancel", c.BaseURL, ecomEndpoint, cmd.OrderID)
 	method := http.MethodPut
 	res := CancelledPayment{}
 	command := struct {
@@ -76,12 +68,12 @@ func (c *client) CancelPayment(ctx context.Context, cmd CancelPaymentCommand) (*
 	command.MerchantInfo.MerchantSerialNumber = cmd.MerchantSerialNumber
 	command.Transaction.TransactionText = cmd.TransactionText
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, command)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, command)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -89,8 +81,9 @@ func (c *client) CancelPayment(ctx context.Context, cmd CancelPaymentCommand) (*
 	return &res, nil
 }
 
-func (c *client) CapturePayment(ctx context.Context, cmd CapturePaymentCommand) (*CapturedPayment, error) {
-	endpoint := fmt.Sprintf("%s/%s/capture", c.baseUrl+ecomEndpoint, cmd.OrderID)
+// CapturePayment captures reserved amounts on a Payment
+func (c *Client) CapturePayment(ctx context.Context, cmd CapturePaymentCommand) (*CapturedPayment, error) {
+	endpoint := fmt.Sprintf("%s/%s/%s/capture", c.BaseURL, ecomEndpoint, cmd.OrderID)
 	method := http.MethodPost
 	res := CapturedPayment{}
 	command := struct {
@@ -106,12 +99,12 @@ func (c *client) CapturePayment(ctx context.Context, cmd CapturePaymentCommand) 
 	command.Transaction.Amount = cmd.Amount
 	command.Transaction.TransactionText = cmd.TransactionText
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, command)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, command)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Add("X-Request-ID", cmd.IdempotencyKey)
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -119,17 +112,18 @@ func (c *client) CapturePayment(ctx context.Context, cmd CapturePaymentCommand) 
 	return &res, nil
 }
 
-func (c *client) GetPayment(ctx context.Context, orderID string) (*Payment, error) {
-	endpoint := fmt.Sprintf("%s/%s/details", c.baseUrl+ecomEndpoint, orderID)
+// GetPayment gets a Payment.
+func (c *Client) GetPayment(ctx context.Context, orderID string) (*Payment, error) {
+	endpoint := fmt.Sprintf("%s/%s/%s/details", c.BaseURL, ecomEndpoint, orderID)
 	method := http.MethodGet
 	res := Payment{}
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, nil)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -137,17 +131,22 @@ func (c *client) GetPayment(ctx context.Context, orderID string) (*Payment, erro
 	return &res, nil
 }
 
-func (c *client) InitiatePayment(ctx context.Context, cmd InitiatePaymentCommand) (*PaymentReference, error) {
-	endpoint := c.baseUrl + ecomEndpoint
+// InitiatePayment initiates a new Payment and returns a reference to a resource
+// hosted by Vipps where the payment flow can continue.
+func (c *Client) InitiatePayment(ctx context.Context, cmd InitiatePaymentCommand) (*PaymentReference, error) {
+	q := url.Values{
+		"scopes": []string{"name"},
+	}
+	endpoint := fmt.Sprintf("%s/%s?%s", c.BaseURL, ecomEndpoint, q.Encode())
 	method := http.MethodPost
 	res := PaymentReference{}
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, cmd)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}
@@ -155,8 +154,9 @@ func (c *client) InitiatePayment(ctx context.Context, cmd InitiatePaymentCommand
 	return &res, nil
 }
 
-func (c *client) RefundPayment(ctx context.Context, cmd RefundPaymentCommand) (*RefundedPayment, error) {
-	endpoint := fmt.Sprintf("%s/%s/refund", c.baseUrl+ecomEndpoint, cmd.OrderID)
+// RefundPayment refunds already captured amounts on a Payment.
+func (c *Client) RefundPayment(ctx context.Context, cmd RefundPaymentCommand) (*RefundedPayment, error) {
+	endpoint := fmt.Sprintf("%s/%s/%s/refund", c.BaseURL, ecomEndpoint, cmd.OrderID)
 	method := http.MethodPost
 	res := RefundedPayment{}
 	command := struct {
@@ -172,12 +172,12 @@ func (c *client) RefundPayment(ctx context.Context, cmd RefundPaymentCommand) (*
 	command.Transaction.TransactionText = cmd.TransactionText
 	command.Transaction.Amount = cmd.Amount
 
-	req, err := c.apiClient.NewRequest(ctx, method, endpoint, command)
+	req, err := c.APIClient.NewRequest(ctx, method, endpoint, command)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Add("X-Request-ID", cmd.IdempotencyKey)
-	err = c.apiClient.Do(req, &res)
+	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

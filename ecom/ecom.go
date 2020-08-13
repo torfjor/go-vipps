@@ -1,4 +1,4 @@
-// Package ecom provides a client and supporting types to consume and interact
+// Package ecom provides a Client and supporting types to consume and interact
 // with the Vipps Ecom V2 API
 package ecom
 
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const ecomEndpoint = "/ecomm/v2/payments"
+const ecomEndpoint = "ecomm/v2/payments"
 
 // Timestamp is a time.Time with a custom JSON marshaller.
 type Timestamp time.Time
@@ -72,6 +72,7 @@ type InitiatePaymentCommand struct {
 	MerchantInfo MerchantInfo `json:"merchantInfo"`
 	CustomerInfo CustomerInfo `json:"customerInfo"`
 	Transaction  Transaction  `json:"transaction"`
+	Scope        []string     `json:"scope"`
 }
 
 // PaymentReference represents a reference to a Vipps payment

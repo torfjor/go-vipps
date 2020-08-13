@@ -1,4 +1,4 @@
-// Package recurring provides a client and supporting types to consume and interact
+// Package recurring provides a Client and supporting types to consume and interact
 // with the Vipps Recurring Payments API
 package recurring
 
