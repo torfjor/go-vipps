@@ -104,22 +104,22 @@ type TransactionLogEntry struct {
 
 // UserDetails represents customer details from Vipps
 type UserDetails struct {
-	BankIDVerified string `json:"bankIdVerified"`
-	DateOfBirth    string `json:"dateOfBirth"`
-	Email          string `json:"email"`
-	FirstName      string `json:"firstName"`
-	LastName       string `json:"lastName"`
-	MobileNumber   string `json:"mobileNumber"`
-	SSN            string `json:"ssn"`
-	UserID         string `json:"userId"`
+	BankIDVerified string `json:"bankIdVerified,omitempty"`
+	DateOfBirth    string `json:"dateOfBirth,omitempty"`
+	Email          string `json:"email,omitempty"`
+	FirstName      string `json:"firstName,omitempty"`
+	LastName       string `json:"lastName,omitempty"`
+	MobileNumber   string `json:"mobileNumber,omitempty"`
+	SSN            string `json:"ssn,omitempty"`
+	UserID         string `json:"userId,omitempty"`
 }
 
 // ShippingDetails represents details for a shipping method
 type ShippingDetails struct {
-	Address          Address `json:"address"`
-	ShippingCost     int     `json:"shippingCost"`
-	ShippingMethod   string  `json:"shippingMethod"`
-	ShippingMethodID string  `json:"shippingMethodId"`
+	Address          Address `json:"address,omitempty"`
+	ShippingCost     int     `json:"shippingCost,omitempty"`
+	ShippingMethod   string  `json:"shippingMethod,omitempty"`
+	ShippingMethodID string  `json:"shippingMethodId,omitempty"`
 }
 
 // Address represents a Customer's shipping address
