@@ -84,10 +84,10 @@ type PaymentReference struct {
 // Payment represents a Vipps payment.
 type Payment struct {
 	OrderID            string                `json:"orderId"`
-	ShippingDetails    ShippingDetails       `json:"shippingDetails"`
+	ShippingDetails    ShippingDetails       `json:"shippingDetails,omitempty"`
 	TransactionLog     []TransactionLogEntry `json:"transactionLogHistory"`
 	TransactionSummary TransactionSummary    `json:"transactionSummary"`
-	UserDetails        UserDetails           `json:"userDetails"`
+	UserDetails        UserDetails           `json:"userDetails,omitempty"`
 }
 
 // TransactionLogEntry represents the list of transactions associated with a
