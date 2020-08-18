@@ -209,6 +209,9 @@ type Transaction struct {
 	// TransactionText is the short message displayed to the user about the
 	// payment in the Vipps app.
 	TransactionText string `json:"transactionText"`
+	// SkipLandingPage is a flag to disable the Vipps landing page and send a
+	// push notification instantly.
+	SkipLandingPage bool `json:"skipLandingPage"`
 }
 
 // TransactionSummary represents a summary of captured, refunded and available
