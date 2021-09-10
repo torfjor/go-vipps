@@ -30,7 +30,7 @@ type RefundPaymentCommand struct {
 // RefundedPayment represents a refunded Vipps Ecom payment
 type RefundedPayment struct {
 	OrderID            string             `json:"orderId"`
-	TransactionInfo    TransactionInfo    `json:"transactionInfo"`
+	TransactionInfo    TransactionInfo    `json:"transaction"`
 	TransactionSummary TransactionSummary `json:"transactionSummary"`
 }
 
