@@ -117,7 +117,7 @@ type UserDetails struct {
 // ShippingDetails represents details for a shipping method
 type ShippingDetails struct {
 	Address          Address `json:"address,omitempty"`
-	ShippingCost     int     `json:"shippingCost,omitempty"`
+	ShippingCost     string  `json:"shippingCost,omitempty"`
 	ShippingMethod   string  `json:"shippingMethod,omitempty"`
 	ShippingMethodID string  `json:"shippingMethodId,omitempty"`
 }

@@ -3,11 +3,12 @@ package ecom
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/go-kit/kit/log"
 	"github.com/torfjor/go-vipps"
 	"github.com/torfjor/go-vipps/internal"
-	"net/http"
-	"net/url"
 )
 
 type Doer interface {
@@ -73,6 +74,8 @@ func (c *Client) CancelPayment(ctx context.Context, cmd CancelPaymentCommand) (*
 		return nil, err
 	}
 
+	req.Header.Add("Merchant-Serial-Number", cmd.MerchantSerialNumber)
+
 	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
@@ -104,6 +107,7 @@ func (c *Client) CapturePayment(ctx context.Context, cmd CapturePaymentCommand) 
 		return nil, err
 	}
 	req.Header.Add("X-Request-ID", cmd.IdempotencyKey)
+	req.Header.Add("Merchant-Serial-Number", cmd.MerchantSerialNumber)
 	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
@@ -113,7 +117,7 @@ func (c *Client) CapturePayment(ctx context.Context, cmd CapturePaymentCommand) 
 }
 
 // GetPayment gets a Payment.
-func (c *Client) GetPayment(ctx context.Context, orderID string) (*Payment, error) {
+func (c *Client) GetPayment(ctx context.Context, orderID string, merchantSerialNumber string) (*Payment, error) {
 	endpoint := fmt.Sprintf("%s/%s/%s/details", c.BaseURL, ecomEndpoint, orderID)
 	method := http.MethodGet
 	res := Payment{}
@@ -123,6 +127,7 @@ func (c *Client) GetPayment(ctx context.Context, orderID string) (*Payment, erro
 		return nil, err
 	}
 
+	req.Header.Add("Merchant-Serial-Number", merchantSerialNumber)
 	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
@@ -145,6 +150,8 @@ func (c *Client) InitiatePayment(ctx context.Context, cmd InitiatePaymentCommand
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Merchant-Serial-Number", cmd.MerchantInfo.MerchantSerialNumber)
 
 	err = c.APIClient.Do(req, &res)
 	if err != nil {
@@ -177,6 +184,7 @@ func (c *Client) RefundPayment(ctx context.Context, cmd RefundPaymentCommand) (*
 		return nil, err
 	}
 	req.Header.Add("X-Request-ID", cmd.IdempotencyKey)
+	req.Header.Add("Merchant-Serial-Number", cmd.MerchantSerialNumber)
 	err = c.APIClient.Do(req, &res)
 	if err != nil {
 		return nil, wrapErr(err)
