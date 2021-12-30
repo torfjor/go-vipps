@@ -4,15 +4,18 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log"
+	"os"
+
+	logkit "github.com/go-kit/kit/log"
+
 	"github.com/torfjor/go-vipps"
 	"github.com/torfjor/go-vipps/auth"
 	"github.com/torfjor/go-vipps/ecom"
-	"log"
-	"os"
 )
 
 var (
-	ecomClient ecom.Client
+	ecomClient *ecom.Client
 	mi         = ecom.MerchantInfo{
 		MerchantSerialNumber: "CHANGETHIS",
 		CallbackURL:          "https://some.endpoint.no/callbacks",
@@ -41,7 +44,7 @@ func main() {
 	authClient := auth.NewClient(vipps.EnvironmentTesting, credentials)
 	ecomClient = ecom.NewClient(vipps.ClientConfig{
 		HTTPClient:  authClient,
-		Logger:      log.New(os.Stdout, "", log.LstdFlags),
+		Logger:      logkit.NewLogfmtLogger(os.Stdout),
 		Environment: vipps.EnvironmentTesting,
 	})
 
@@ -57,6 +60,18 @@ func main() {
 	reader.ReadByte()
 	capturedPayment := capturePayment(orderID, transactionText, amount)
 	fmt.Printf("Captured payment: %+v\n", capturedPayment)
+
+	payment := getPayment(orderID)
+	fmt.Printf("Retreived payment: %+v\n", payment)
+
+}
+
+func getPayment(orderId string) *ecom.Payment {
+	p, err := ecomClient.GetPayment(context.TODO(), orderId, mi.MerchantSerialNumber)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return p
 }
 
 func initiatePayment(orderID, transactionText string, amount, mobileNumber int) string {
